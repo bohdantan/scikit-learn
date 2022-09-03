@@ -617,98 +617,6 @@ class BaseEstimator:
         return output
 
 
-class ClassifierMixin:
-    """Mixin class for all classifiers in scikit-learn."""
-
-    _estimator_type = "classifier"
-
-    def score(self, X, y, sample_weight=None):
-        """
-        Return the mean accuracy on the given test data and labels.
-
-        In multi-label classification, this is the subset accuracy
-        which is a harsh metric since you require for each sample that
-        each label set be correctly predicted.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Test samples.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-            True labels for `X`.
-
-        sample_weight : array-like of shape (n_samples,), default=None
-            Sample weights.
-
-        Returns
-        -------
-        score : float
-            Mean accuracy of ``self.predict(X)`` wrt. `y`.
-        """
-        from .metrics import accuracy_score
-
-        return accuracy_score(y, self.predict(X), sample_weight=sample_weight)
-
-    def _more_tags(self):
-        return {"requires_y": True}
-
-
-class RegressorMixin:
-    """Mixin class for all regression estimators in scikit-learn."""
-
-    _estimator_type = "regressor"
-
-    def score(self, X, y, sample_weight=None):
-        """Return the coefficient of determination of the prediction.
-
-        The coefficient of determination :math:`R^2` is defined as
-        :math:`(1 - \\frac{u}{v})`, where :math:`u` is the residual
-        sum of squares ``((y_true - y_pred)** 2).sum()`` and :math:`v`
-        is the total sum of squares ``((y_true - y_true.mean()) ** 2).sum()``.
-        The best possible score is 1.0 and it can be negative (because the
-        model can be arbitrarily worse). A constant model that always predicts
-        the expected value of `y`, disregarding the input features, would get
-        a :math:`R^2` score of 0.0.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Test samples. For some estimators this may be a precomputed
-            kernel matrix or a list of generic objects instead with shape
-            ``(n_samples, n_samples_fitted)``, where ``n_samples_fitted``
-            is the number of samples used in the fitting for the estimator.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-            True values for `X`.
-
-        sample_weight : array-like of shape (n_samples,), default=None
-            Sample weights.
-
-        Returns
-        -------
-        score : float
-            :math:`R^2` of ``self.predict(X)`` wrt. `y`.
-
-        Notes
-        -----
-        The :math:`R^2` score used when calling ``score`` on a regressor uses
-        ``multioutput='uniform_average'`` from version 0.23 to keep consistent
-        with default value of :func:`~sklearn.metrics.r2_score`.
-        This influences the ``score`` method of all the multioutput
-        regressors (except for
-        :class:`~sklearn.multioutput.MultiOutputRegressor`).
-        """
-
-        from .metrics import r2_score
-
-        y_pred = self.predict(X)
-        return r2_score(y, y_pred, sample_weight=sample_weight)
-
-    def _more_tags(self):
-        return {"requires_y": True}
-
-
 class ClusterMixin:
     """Mixin class for all cluster estimators in scikit-learn."""
 
@@ -738,84 +646,6 @@ class ClusterMixin:
 
     def _more_tags(self):
         return {"preserves_dtype": []}
-
-
-class BiclusterMixin:
-    """Mixin class for all bicluster estimators in scikit-learn."""
-
-    @property
-    def biclusters_(self):
-        """Convenient way to get row and column indicators together.
-
-        Returns the ``rows_`` and ``columns_`` members.
-        """
-        return self.rows_, self.columns_
-
-    def get_indices(self, i):
-        """Row and column indices of the `i`'th bicluster.
-
-        Only works if ``rows_`` and ``columns_`` attributes exist.
-
-        Parameters
-        ----------
-        i : int
-            The index of the cluster.
-
-        Returns
-        -------
-        row_ind : ndarray, dtype=np.intp
-            Indices of rows in the dataset that belong to the bicluster.
-        col_ind : ndarray, dtype=np.intp
-            Indices of columns in the dataset that belong to the bicluster.
-        """
-        rows = self.rows_[i]
-        columns = self.columns_[i]
-        return np.nonzero(rows)[0], np.nonzero(columns)[0]
-
-    def get_shape(self, i):
-        """Shape of the `i`'th bicluster.
-
-        Parameters
-        ----------
-        i : int
-            The index of the cluster.
-
-        Returns
-        -------
-        n_rows : int
-            Number of rows in the bicluster.
-
-        n_cols : int
-            Number of columns in the bicluster.
-        """
-        indices = self.get_indices(i)
-        return tuple(len(i) for i in indices)
-
-    def get_submatrix(self, i, data):
-        """Return the submatrix corresponding to bicluster `i`.
-
-        Parameters
-        ----------
-        i : int
-            The index of the cluster.
-        data : array-like of shape (n_samples, n_features)
-            The data.
-
-        Returns
-        -------
-        submatrix : ndarray of shape (n_rows, n_cols)
-            The submatrix corresponding to bicluster `i`.
-
-        Notes
-        -----
-        Works with sparse matrices. Only works if ``rows_`` and
-        ``columns_`` attributes exist.
-        """
-        from .utils.validation import check_array
-
-        data = check_array(data, accept_sparse="csr")
-        row_ind, col_ind = self.get_indices(i)
-        return data[row_ind[:, np.newaxis], col_ind]
 
 
 class TransformerMixin:
@@ -987,22 +817,6 @@ def is_regressor(estimator):
         True if estimator is a regressor and False otherwise.
     """
     return getattr(estimator, "_estimator_type", None) == "regressor"
-
-
-def is_outlier_detector(estimator):
-    """Return True if the given estimator is (probably) an outlier detector.
-
-    Parameters
-    ----------
-    estimator : estimator instance
-        Estimator object to test.
-
-    Returns
-    -------
-    out : bool
-        True if estimator is an outlier detector and False otherwise.
-    """
-    return getattr(estimator, "_estimator_type", None) == "outlier_detector"
 
 
 def _is_pairwise(estimator):

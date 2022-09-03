@@ -8,12 +8,13 @@ import numpy as np
 
 import warnings
 
+from numpy.testing import assert_array_equal
 from scipy.spatial import distance
 from scipy import sparse
 
 import pytest
 
-from sklearn.utils._testing import assert_array_equal
+# from sklearn.utils._testing import assert_array_equal
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import dbscan
@@ -77,21 +78,21 @@ def test_dbscan_sparse():
     assert_array_equal(core_dense, core_sparse)
     assert_array_equal(labels_dense, labels_sparse)
 
-
-@pytest.mark.parametrize("include_self", [False, True])
-def test_dbscan_sparse_precomputed(include_self):
-    D = pairwise_distances(X)
-    nn = NearestNeighbors(radius=0.9).fit(X)
-    X_ = X if include_self else None
-    D_sparse = nn.radius_neighbors_graph(X=X_, mode="distance")
-    # Ensure it is sparse not merely on diagonals:
-    assert D_sparse.nnz < D.shape[0] * (D.shape[0] - 1)
-    core_sparse, labels_sparse = dbscan(
-        D_sparse, eps=0.8, min_samples=10, metric="precomputed"
-    )
-    core_dense, labels_dense = dbscan(D, eps=0.8, min_samples=10, metric="precomputed")
-    assert_array_equal(core_dense, core_sparse)
-    assert_array_equal(labels_dense, labels_sparse)
+#
+# @pytest.mark.parametrize("include_self", [False, True])
+# def test_dbscan_sparse_precomputed(include_self):
+#     D = pairwise_distances(X)
+#     nn = NearestNeighbors(radius=0.9).fit(X)
+#     X_ = X if include_self else None
+#     D_sparse = nn.radius_neighbors_graph(X=X_, mode="distance")
+#     # Ensure it is sparse not merely on diagonals:
+#     assert D_sparse.nnz < D.shape[0] * (D.shape[0] - 1)
+#     core_sparse, labels_sparse = dbscan(
+#         D_sparse, eps=0.8, min_samples=10, metric="precomputed"
+#     )
+#     core_dense, labels_dense = dbscan(D, eps=0.8, min_samples=10, metric="precomputed")
+#     assert_array_equal(core_dense, core_sparse)
+#     assert_array_equal(labels_dense, labels_sparse)
 
 
 def test_dbscan_sparse_precomputed_different_eps():

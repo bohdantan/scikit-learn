@@ -11,10 +11,6 @@ def configuration(parent_package="", top_path=None):
     if os.name == "posix":
         libraries.append("m")
 
-    config.add_subpackage("_plot")
-    config.add_subpackage("_plot.tests")
-    config.add_subpackage("cluster")
-
     config.add_extension(
         "_pairwise_fast", sources=["_pairwise_fast.pyx"], libraries=libraries
     )
@@ -25,8 +21,6 @@ def configuration(parent_package="", top_path=None):
         include_dirs=[np.get_include(), os.path.join(np.get_include(), "numpy")],
         libraries=libraries,
     )
-
-    config.add_subpackage("tests")
 
     return config
 

@@ -185,42 +185,42 @@ def check_pairwise_arrays(
 
     return X, Y
 
-
-def check_paired_arrays(X, Y):
-    """Set X and Y appropriately and checks inputs for paired distances.
-
-    All paired distance metrics should use this function first to assert that
-    the given parameters are correct and safe to use.
-
-    Specifically, this function first ensures that both X and Y are arrays,
-    then checks that they are at least two dimensional while ensuring that
-    their elements are floats. Finally, the function checks that the size
-    of the dimensions of the two arrays are equal.
-
-    Parameters
-    ----------
-    X : {array-like, sparse matrix} of shape (n_samples_X, n_features)
-
-    Y : {array-like, sparse matrix} of shape (n_samples_Y, n_features)
-
-    Returns
-    -------
-    safe_X : {array-like, sparse matrix} of shape (n_samples_X, n_features)
-        An array equal to X, guaranteed to be a numpy array.
-
-    safe_Y : {array-like, sparse matrix} of shape (n_samples_Y, n_features)
-        An array equal to Y if Y was not None, guaranteed to be a numpy array.
-        If Y was None, safe_Y will be a pointer to X.
-
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-    if X.shape != Y.shape:
-        raise ValueError(
-            "X and Y should be of same shape. They were respectively %r and %r long."
-            % (X.shape, Y.shape)
-        )
-    return X, Y
-
+#
+# def check_paired_arrays(X, Y):
+#     """Set X and Y appropriately and checks inputs for paired distances.
+#
+#     All paired distance metrics should use this function first to assert that
+#     the given parameters are correct and safe to use.
+#
+#     Specifically, this function first ensures that both X and Y are arrays,
+#     then checks that they are at least two dimensional while ensuring that
+#     their elements are floats. Finally, the function checks that the size
+#     of the dimensions of the two arrays are equal.
+#
+#     Parameters
+#     ----------
+#     X : {array-like, sparse matrix} of shape (n_samples_X, n_features)
+#
+#     Y : {array-like, sparse matrix} of shape (n_samples_Y, n_features)
+#
+#     Returns
+#     -------
+#     safe_X : {array-like, sparse matrix} of shape (n_samples_X, n_features)
+#         An array equal to X, guaranteed to be a numpy array.
+#
+#     safe_Y : {array-like, sparse matrix} of shape (n_samples_Y, n_features)
+#         An array equal to Y if Y was not None, guaranteed to be a numpy array.
+#         If Y was None, safe_Y will be a pointer to X.
+#
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#     if X.shape != Y.shape:
+#         raise ValueError(
+#             "X and Y should be of same shape. They were respectively %r and %r long."
+#             % (X.shape, Y.shape)
+#         )
+#     return X, Y
+#
 
 # Pairwise distances
 def euclidean_distances(
@@ -570,173 +570,173 @@ def _euclidean_distances_upcast(X, XX=None, Y=None, YY=None, batch_size=None):
 
     return distances
 
-
-def _argmin_min_reduce(dist, start):
-    indices = dist.argmin(axis=1)
-    values = dist[np.arange(dist.shape[0]), indices]
-    return indices, values
-
-
-def pairwise_distances_argmin_min(
-    X, Y, *, axis=1, metric="euclidean", metric_kwargs=None
-):
-    """Compute minimum distances between one point and a set of points.
-
-    This function computes for each row in X, the index of the row of Y which
-    is closest (according to the specified distance). The minimal distances are
-    also returned.
-
-    This is mostly equivalent to calling:
-
-        (pairwise_distances(X, Y=Y, metric=metric).argmin(axis=axis),
-         pairwise_distances(X, Y=Y, metric=metric).min(axis=axis))
-
-    but uses much less memory, and is faster for large arrays.
-
-    Parameters
-    ----------
-    X : {array-like, sparse matrix} of shape (n_samples_X, n_features)
-        Array containing points.
-
-    Y : {array-like, sparse matrix} of shape (n_samples_Y, n_features)
-        Array containing points.
-
-    axis : int, default=1
-        Axis along which the argmin and distances are to be computed.
-
-    metric : str or callable, default='euclidean'
-        Metric to use for distance computation. Any metric from scikit-learn
-        or scipy.spatial.distance can be used.
-
-        If metric is a callable function, it is called on each
-        pair of instances (rows) and the resulting value recorded. The callable
-        should take two arrays as input and return one value indicating the
-        distance between them. This works for Scipy's metrics, but is less
-        efficient than passing the metric name as a string.
-
-        Distance matrices are not supported.
-
-        Valid values for metric are:
-
-        - from scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
-          'manhattan']
-
-        - from scipy.spatial.distance: ['braycurtis', 'canberra', 'chebyshev',
-          'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski',
-          'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao',
-          'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-          'yule']
-
-        See the documentation for scipy.spatial.distance for details on these
-        metrics.
-
-    metric_kwargs : dict, default=None
-        Keyword arguments to pass to specified metric function.
-
-    Returns
-    -------
-    argmin : ndarray
-        Y[argmin[i], :] is the row in Y that is closest to X[i, :].
-
-    distances : ndarray
-        distances[i] is the distance between the i-th row in X and the
-        argmin[i]-th row in Y.
-
-    See Also
-    --------
-    sklearn.metrics.pairwise_distances
-    sklearn.metrics.pairwise_distances_argmin
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-
-    if metric_kwargs is None:
-        metric_kwargs = {}
-
-    if axis == 0:
-        X, Y = Y, X
-
-    indices, values = zip(
-        *pairwise_distances_chunked(
-            X, Y, reduce_func=_argmin_min_reduce, metric=metric, **metric_kwargs
-        )
-    )
-    indices = np.concatenate(indices)
-    values = np.concatenate(values)
-
-    return indices, values
-
-
-def pairwise_distances_argmin(X, Y, *, axis=1, metric="euclidean", metric_kwargs=None):
-    """Compute minimum distances between one point and a set of points.
-
-    This function computes for each row in X, the index of the row of Y which
-    is closest (according to the specified distance).
-
-    This is mostly equivalent to calling:
-
-        pairwise_distances(X, Y=Y, metric=metric).argmin(axis=axis)
-
-    but uses much less memory, and is faster for large arrays.
-
-    This function works with dense 2D arrays only.
-
-    Parameters
-    ----------
-    X : array-like of shape (n_samples_X, n_features)
-        Array containing points.
-
-    Y : array-like of shape (n_samples_Y, n_features)
-        Arrays containing points.
-
-    axis : int, default=1
-        Axis along which the argmin and distances are to be computed.
-
-    metric : str or callable, default="euclidean"
-        Metric to use for distance computation. Any metric from scikit-learn
-        or scipy.spatial.distance can be used.
-
-        If metric is a callable function, it is called on each
-        pair of instances (rows) and the resulting value recorded. The callable
-        should take two arrays as input and return one value indicating the
-        distance between them. This works for Scipy's metrics, but is less
-        efficient than passing the metric name as a string.
-
-        Distance matrices are not supported.
-
-        Valid values for metric are:
-
-        - from scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
-          'manhattan']
-
-        - from scipy.spatial.distance: ['braycurtis', 'canberra', 'chebyshev',
-          'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski',
-          'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao',
-          'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-          'yule']
-
-        See the documentation for scipy.spatial.distance for details on these
-        metrics.
-
-    metric_kwargs : dict, default=None
-        Keyword arguments to pass to specified metric function.
-
-    Returns
-    -------
-    argmin : numpy.ndarray
-        Y[argmin[i], :] is the row in Y that is closest to X[i, :].
-
-    See Also
-    --------
-    sklearn.metrics.pairwise_distances
-    sklearn.metrics.pairwise_distances_argmin_min
-    """
-    if metric_kwargs is None:
-        metric_kwargs = {}
-
-    return pairwise_distances_argmin_min(
-        X, Y, axis=axis, metric=metric, metric_kwargs=metric_kwargs
-    )[0]
-
+#
+# def _argmin_min_reduce(dist, start):
+#     indices = dist.argmin(axis=1)
+#     values = dist[np.arange(dist.shape[0]), indices]
+#     return indices, values
+#
+#
+# def pairwise_distances_argmin_min(
+#     X, Y, *, axis=1, metric="euclidean", metric_kwargs=None
+# ):
+#     """Compute minimum distances between one point and a set of points.
+#
+#     This function computes for each row in X, the index of the row of Y which
+#     is closest (according to the specified distance). The minimal distances are
+#     also returned.
+#
+#     This is mostly equivalent to calling:
+#
+#         (pairwise_distances(X, Y=Y, metric=metric).argmin(axis=axis),
+#          pairwise_distances(X, Y=Y, metric=metric).min(axis=axis))
+#
+#     but uses much less memory, and is faster for large arrays.
+#
+#     Parameters
+#     ----------
+#     X : {array-like, sparse matrix} of shape (n_samples_X, n_features)
+#         Array containing points.
+#
+#     Y : {array-like, sparse matrix} of shape (n_samples_Y, n_features)
+#         Array containing points.
+#
+#     axis : int, default=1
+#         Axis along which the argmin and distances are to be computed.
+#
+#     metric : str or callable, default='euclidean'
+#         Metric to use for distance computation. Any metric from scikit-learn
+#         or scipy.spatial.distance can be used.
+#
+#         If metric is a callable function, it is called on each
+#         pair of instances (rows) and the resulting value recorded. The callable
+#         should take two arrays as input and return one value indicating the
+#         distance between them. This works for Scipy's metrics, but is less
+#         efficient than passing the metric name as a string.
+#
+#         Distance matrices are not supported.
+#
+#         Valid values for metric are:
+#
+#         - from scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
+#           'manhattan']
+#
+#         - from scipy.spatial.distance: ['braycurtis', 'canberra', 'chebyshev',
+#           'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski',
+#           'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao',
+#           'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+#           'yule']
+#
+#         See the documentation for scipy.spatial.distance for details on these
+#         metrics.
+#
+#     metric_kwargs : dict, default=None
+#         Keyword arguments to pass to specified metric function.
+#
+#     Returns
+#     -------
+#     argmin : ndarray
+#         Y[argmin[i], :] is the row in Y that is closest to X[i, :].
+#
+#     distances : ndarray
+#         distances[i] is the distance between the i-th row in X and the
+#         argmin[i]-th row in Y.
+#
+#     See Also
+#     --------
+#     sklearn.metrics.pairwise_distances
+#     sklearn.metrics.pairwise_distances_argmin
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#
+#     if metric_kwargs is None:
+#         metric_kwargs = {}
+#
+#     if axis == 0:
+#         X, Y = Y, X
+#
+#     indices, values = zip(
+#         *pairwise_distances_chunked(
+#             X, Y, reduce_func=_argmin_min_reduce, metric=metric, **metric_kwargs
+#         )
+#     )
+#     indices = np.concatenate(indices)
+#     values = np.concatenate(values)
+#
+#     return indices, values
+#
+#
+# def pairwise_distances_argmin(X, Y, *, axis=1, metric="euclidean", metric_kwargs=None):
+#     """Compute minimum distances between one point and a set of points.
+#
+#     This function computes for each row in X, the index of the row of Y which
+#     is closest (according to the specified distance).
+#
+#     This is mostly equivalent to calling:
+#
+#         pairwise_distances(X, Y=Y, metric=metric).argmin(axis=axis)
+#
+#     but uses much less memory, and is faster for large arrays.
+#
+#     This function works with dense 2D arrays only.
+#
+#     Parameters
+#     ----------
+#     X : array-like of shape (n_samples_X, n_features)
+#         Array containing points.
+#
+#     Y : array-like of shape (n_samples_Y, n_features)
+#         Arrays containing points.
+#
+#     axis : int, default=1
+#         Axis along which the argmin and distances are to be computed.
+#
+#     metric : str or callable, default="euclidean"
+#         Metric to use for distance computation. Any metric from scikit-learn
+#         or scipy.spatial.distance can be used.
+#
+#         If metric is a callable function, it is called on each
+#         pair of instances (rows) and the resulting value recorded. The callable
+#         should take two arrays as input and return one value indicating the
+#         distance between them. This works for Scipy's metrics, but is less
+#         efficient than passing the metric name as a string.
+#
+#         Distance matrices are not supported.
+#
+#         Valid values for metric are:
+#
+#         - from scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
+#           'manhattan']
+#
+#         - from scipy.spatial.distance: ['braycurtis', 'canberra', 'chebyshev',
+#           'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski',
+#           'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao',
+#           'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+#           'yule']
+#
+#         See the documentation for scipy.spatial.distance for details on these
+#         metrics.
+#
+#     metric_kwargs : dict, default=None
+#         Keyword arguments to pass to specified metric function.
+#
+#     Returns
+#     -------
+#     argmin : numpy.ndarray
+#         Y[argmin[i], :] is the row in Y that is closest to X[i, :].
+#
+#     See Also
+#     --------
+#     sklearn.metrics.pairwise_distances
+#     sklearn.metrics.pairwise_distances_argmin_min
+#     """
+#     if metric_kwargs is None:
+#         metric_kwargs = {}
+#
+#     return pairwise_distances_argmin_min(
+#         X, Y, axis=axis, metric=metric, metric_kwargs=metric_kwargs
+#     )[0]
+#
 
 def haversine_distances(X, Y=None):
     """Compute the Haversine distance between samples in X and Y.
@@ -906,313 +906,313 @@ def cosine_distances(X, Y=None):
     return S
 
 
-# Paired distances
-def paired_euclidean_distances(X, Y):
-    """
-    Computes the paired euclidean distances between X and Y.
-
-    Read more in the :ref:`User Guide <metrics>`.
-
-    Parameters
-    ----------
-    X : array-like of shape (n_samples, n_features)
-
-    Y : array-like of shape (n_samples, n_features)
-
-    Returns
-    -------
-    distances : ndarray of shape (n_samples,)
-    """
-    X, Y = check_paired_arrays(X, Y)
-    return row_norms(X - Y)
-
-
-def paired_manhattan_distances(X, Y):
-    """Compute the L1 distances between the vectors in X and Y.
-
-    Read more in the :ref:`User Guide <metrics>`.
-
-    Parameters
-    ----------
-    X : array-like of shape (n_samples, n_features)
-
-    Y : array-like of shape (n_samples, n_features)
-
-    Returns
-    -------
-    distances : ndarray of shape (n_samples,)
-    """
-    X, Y = check_paired_arrays(X, Y)
-    diff = X - Y
-    if issparse(diff):
-        diff.data = np.abs(diff.data)
-        return np.squeeze(np.array(diff.sum(axis=1)))
-    else:
-        return np.abs(diff).sum(axis=-1)
-
-
-def paired_cosine_distances(X, Y):
-    """
-    Computes the paired cosine distances between X and Y.
-
-    Read more in the :ref:`User Guide <metrics>`.
-
-    Parameters
-    ----------
-    X : array-like of shape (n_samples, n_features)
-
-    Y : array-like of shape (n_samples, n_features)
-
-    Returns
-    -------
-    distances : ndarray of shape (n_samples,)
-
-    Notes
-    -----
-    The cosine distance is equivalent to the half the squared
-    euclidean distance if each sample is normalized to unit norm.
-    """
-    X, Y = check_paired_arrays(X, Y)
-    return 0.5 * row_norms(normalize(X) - normalize(Y), squared=True)
-
-
-PAIRED_DISTANCES = {
-    "cosine": paired_cosine_distances,
-    "euclidean": paired_euclidean_distances,
-    "l2": paired_euclidean_distances,
-    "l1": paired_manhattan_distances,
-    "manhattan": paired_manhattan_distances,
-    "cityblock": paired_manhattan_distances,
-}
-
-
-def paired_distances(X, Y, *, metric="euclidean", **kwds):
-    """
-    Computes the paired distances between X and Y.
-
-    Computes the distances between (X[0], Y[0]), (X[1], Y[1]), etc...
-
-    Read more in the :ref:`User Guide <metrics>`.
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples, n_features)
-        Array 1 for distance computation.
-
-    Y : ndarray of shape (n_samples, n_features)
-        Array 2 for distance computation.
-
-    metric : str or callable, default="euclidean"
-        The metric to use when calculating distance between instances in a
-        feature array. If metric is a string, it must be one of the options
-        specified in PAIRED_DISTANCES, including "euclidean",
-        "manhattan", or "cosine".
-        Alternatively, if metric is a callable function, it is called on each
-        pair of instances (rows) and the resulting value recorded. The callable
-        should take two arrays from X as input and return a value indicating
-        the distance between them.
-
-    Returns
-    -------
-    distances : ndarray of shape (n_samples,)
-
-    See Also
-    --------
-    pairwise_distances : Computes the distance between every pair of samples.
-
-    Examples
-    --------
-    >>> from sklearn.metrics.pairwise import paired_distances
-    >>> X = [[0, 1], [1, 1]]
-    >>> Y = [[0, 1], [2, 1]]
-    >>> paired_distances(X, Y)
-    array([0., 1.])
-    """
-
-    if metric in PAIRED_DISTANCES:
-        func = PAIRED_DISTANCES[metric]
-        return func(X, Y)
-    elif callable(metric):
-        # Check the matrix first (it is usually done by the metric)
-        X, Y = check_paired_arrays(X, Y)
-        distances = np.zeros(len(X))
-        for i in range(len(X)):
-            distances[i] = metric(X[i], Y[i])
-        return distances
-    else:
-        raise ValueError("Unknown distance %s" % metric)
-
-
-# Kernels
-def linear_kernel(X, Y=None, dense_output=True):
-    """
-    Compute the linear kernel between X and Y.
-
-    Read more in the :ref:`User Guide <linear_kernel>`.
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples_X, n_features)
-        A feature array.
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-        An optional second feature array. If `None`, uses `Y=X`.
-
-    dense_output : bool, default=True
-        Whether to return dense output even when the input is sparse. If
-        ``False``, the output is sparse if both input arrays are sparse.
-
-        .. versionadded:: 0.20
-
-    Returns
-    -------
-    Gram matrix : ndarray of shape (n_samples_X, n_samples_Y)
-        The Gram matrix of the linear kernel, i.e. `X @ Y.T`.
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-    return safe_sparse_dot(X, Y.T, dense_output=dense_output)
-
-
-def polynomial_kernel(X, Y=None, degree=3, gamma=None, coef0=1):
-    """
-    Compute the polynomial kernel between X and Y::
-
-        K(X, Y) = (gamma <X, Y> + coef0)^degree
-
-    Read more in the :ref:`User Guide <polynomial_kernel>`.
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples_X, n_features)
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-
-    degree : int, default=3
-
-    gamma : float, default=None
-        If None, defaults to 1.0 / n_features.
-
-    coef0 : float, default=1
-
-    Returns
-    -------
-    Gram matrix : ndarray of shape (n_samples_X, n_samples_Y)
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-    if gamma is None:
-        gamma = 1.0 / X.shape[1]
-
-    K = safe_sparse_dot(X, Y.T, dense_output=True)
-    K *= gamma
-    K += coef0
-    K **= degree
-    return K
-
-
-def sigmoid_kernel(X, Y=None, gamma=None, coef0=1):
-    """
-    Compute the sigmoid kernel between X and Y::
-
-        K(X, Y) = tanh(gamma <X, Y> + coef0)
-
-    Read more in the :ref:`User Guide <sigmoid_kernel>`.
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples_X, n_features)
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-        If `None`, uses `Y=X`.
-
-    gamma : float, default=None
-        If None, defaults to 1.0 / n_features.
-
-    coef0 : float, default=1
-
-    Returns
-    -------
-    Gram matrix : ndarray of shape (n_samples_X, n_samples_Y)
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-    if gamma is None:
-        gamma = 1.0 / X.shape[1]
-
-    K = safe_sparse_dot(X, Y.T, dense_output=True)
-    K *= gamma
-    K += coef0
-    np.tanh(K, K)  # compute tanh in-place
-    return K
-
-
-def rbf_kernel(X, Y=None, gamma=None):
-    """
-    Compute the rbf (gaussian) kernel between X and Y::
-
-        K(x, y) = exp(-gamma ||x-y||^2)
-
-    for each pair of rows x in X and y in Y.
-
-    Read more in the :ref:`User Guide <rbf_kernel>`.
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples_X, n_features)
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-        If `None`, uses `Y=X`.
-
-    gamma : float, default=None
-        If None, defaults to 1.0 / n_features.
-
-    Returns
-    -------
-    kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-    if gamma is None:
-        gamma = 1.0 / X.shape[1]
-
-    K = euclidean_distances(X, Y, squared=True)
-    K *= -gamma
-    np.exp(K, K)  # exponentiate K in-place
-    return K
-
-
-def laplacian_kernel(X, Y=None, gamma=None):
-    """Compute the laplacian kernel between X and Y.
-
-    The laplacian kernel is defined as::
-
-        K(x, y) = exp(-gamma ||x-y||_1)
-
-    for each pair of rows x in X and y in Y.
-    Read more in the :ref:`User Guide <laplacian_kernel>`.
-
-    .. versionadded:: 0.17
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples_X, n_features)
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-        If `None`, uses `Y=X`.
-
-    gamma : float, default=None
-        If None, defaults to 1.0 / n_features.
-
-    Returns
-    -------
-    kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
-    """
-    X, Y = check_pairwise_arrays(X, Y)
-    if gamma is None:
-        gamma = 1.0 / X.shape[1]
-
-    K = -gamma * manhattan_distances(X, Y)
-    np.exp(K, K)  # exponentiate K in-place
-    return K
-
-
+# # Paired distances
+# def paired_euclidean_distances(X, Y):
+#     """
+#     Computes the paired euclidean distances between X and Y.
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#
+#     Parameters
+#     ----------
+#     X : array-like of shape (n_samples, n_features)
+#
+#     Y : array-like of shape (n_samples, n_features)
+#
+#     Returns
+#     -------
+#     distances : ndarray of shape (n_samples,)
+#     """
+#     X, Y = check_paired_arrays(X, Y)
+#     return row_norms(X - Y)
+#
+#
+# def paired_manhattan_distances(X, Y):
+#     """Compute the L1 distances between the vectors in X and Y.
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#
+#     Parameters
+#     ----------
+#     X : array-like of shape (n_samples, n_features)
+#
+#     Y : array-like of shape (n_samples, n_features)
+#
+#     Returns
+#     -------
+#     distances : ndarray of shape (n_samples,)
+#     """
+#     X, Y = check_paired_arrays(X, Y)
+#     diff = X - Y
+#     if issparse(diff):
+#         diff.data = np.abs(diff.data)
+#         return np.squeeze(np.array(diff.sum(axis=1)))
+#     else:
+#         return np.abs(diff).sum(axis=-1)
+#
+#
+# def paired_cosine_distances(X, Y):
+#     """
+#     Computes the paired cosine distances between X and Y.
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#
+#     Parameters
+#     ----------
+#     X : array-like of shape (n_samples, n_features)
+#
+#     Y : array-like of shape (n_samples, n_features)
+#
+#     Returns
+#     -------
+#     distances : ndarray of shape (n_samples,)
+#
+#     Notes
+#     -----
+#     The cosine distance is equivalent to the half the squared
+#     euclidean distance if each sample is normalized to unit norm.
+#     """
+#     X, Y = check_paired_arrays(X, Y)
+#     return 0.5 * row_norms(normalize(X) - normalize(Y), squared=True)
+#
+#
+# PAIRED_DISTANCES = {
+#     "cosine": paired_cosine_distances,
+#     "euclidean": paired_euclidean_distances,
+#     "l2": paired_euclidean_distances,
+#     "l1": paired_manhattan_distances,
+#     "manhattan": paired_manhattan_distances,
+#     "cityblock": paired_manhattan_distances,
+# }
+#
+#
+# def paired_distances(X, Y, *, metric="euclidean", **kwds):
+#     """
+#     Computes the paired distances between X and Y.
+#
+#     Computes the distances between (X[0], Y[0]), (X[1], Y[1]), etc...
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples, n_features)
+#         Array 1 for distance computation.
+#
+#     Y : ndarray of shape (n_samples, n_features)
+#         Array 2 for distance computation.
+#
+#     metric : str or callable, default="euclidean"
+#         The metric to use when calculating distance between instances in a
+#         feature array. If metric is a string, it must be one of the options
+#         specified in PAIRED_DISTANCES, including "euclidean",
+#         "manhattan", or "cosine".
+#         Alternatively, if metric is a callable function, it is called on each
+#         pair of instances (rows) and the resulting value recorded. The callable
+#         should take two arrays from X as input and return a value indicating
+#         the distance between them.
+#
+#     Returns
+#     -------
+#     distances : ndarray of shape (n_samples,)
+#
+#     See Also
+#     --------
+#     pairwise_distances : Computes the distance between every pair of samples.
+#
+#     Examples
+#     --------
+#     >>> from sklearn.metrics.pairwise import paired_distances
+#     >>> X = [[0, 1], [1, 1]]
+#     >>> Y = [[0, 1], [2, 1]]
+#     >>> paired_distances(X, Y)
+#     array([0., 1.])
+#     """
+#
+#     if metric in PAIRED_DISTANCES:
+#         func = PAIRED_DISTANCES[metric]
+#         return func(X, Y)
+#     elif callable(metric):
+#         # Check the matrix first (it is usually done by the metric)
+#         X, Y = check_paired_arrays(X, Y)
+#         distances = np.zeros(len(X))
+#         for i in range(len(X)):
+#             distances[i] = metric(X[i], Y[i])
+#         return distances
+#     else:
+#         raise ValueError("Unknown distance %s" % metric)
+#
+#
+# # Kernels
+# def linear_kernel(X, Y=None, dense_output=True):
+#     """
+#     Compute the linear kernel between X and Y.
+#
+#     Read more in the :ref:`User Guide <linear_kernel>`.
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples_X, n_features)
+#         A feature array.
+#
+#     Y : ndarray of shape (n_samples_Y, n_features), default=None
+#         An optional second feature array. If `None`, uses `Y=X`.
+#
+#     dense_output : bool, default=True
+#         Whether to return dense output even when the input is sparse. If
+#         ``False``, the output is sparse if both input arrays are sparse.
+#
+#         .. versionadded:: 0.20
+#
+#     Returns
+#     -------
+#     Gram matrix : ndarray of shape (n_samples_X, n_samples_Y)
+#         The Gram matrix of the linear kernel, i.e. `X @ Y.T`.
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#     return safe_sparse_dot(X, Y.T, dense_output=dense_output)
+#
+#
+# def polynomial_kernel(X, Y=None, degree=3, gamma=None, coef0=1):
+#     """
+#     Compute the polynomial kernel between X and Y::
+#
+#         K(X, Y) = (gamma <X, Y> + coef0)^degree
+#
+#     Read more in the :ref:`User Guide <polynomial_kernel>`.
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples_X, n_features)
+#
+#     Y : ndarray of shape (n_samples_Y, n_features), default=None
+#
+#     degree : int, default=3
+#
+#     gamma : float, default=None
+#         If None, defaults to 1.0 / n_features.
+#
+#     coef0 : float, default=1
+#
+#     Returns
+#     -------
+#     Gram matrix : ndarray of shape (n_samples_X, n_samples_Y)
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#     if gamma is None:
+#         gamma = 1.0 / X.shape[1]
+#
+#     K = safe_sparse_dot(X, Y.T, dense_output=True)
+#     K *= gamma
+#     K += coef0
+#     K **= degree
+#     return K
+#
+#
+# def sigmoid_kernel(X, Y=None, gamma=None, coef0=1):
+#     """
+#     Compute the sigmoid kernel between X and Y::
+#
+#         K(X, Y) = tanh(gamma <X, Y> + coef0)
+#
+#     Read more in the :ref:`User Guide <sigmoid_kernel>`.
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples_X, n_features)
+#
+#     Y : ndarray of shape (n_samples_Y, n_features), default=None
+#         If `None`, uses `Y=X`.
+#
+#     gamma : float, default=None
+#         If None, defaults to 1.0 / n_features.
+#
+#     coef0 : float, default=1
+#
+#     Returns
+#     -------
+#     Gram matrix : ndarray of shape (n_samples_X, n_samples_Y)
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#     if gamma is None:
+#         gamma = 1.0 / X.shape[1]
+#
+#     K = safe_sparse_dot(X, Y.T, dense_output=True)
+#     K *= gamma
+#     K += coef0
+#     np.tanh(K, K)  # compute tanh in-place
+#     return K
+#
+#
+# def rbf_kernel(X, Y=None, gamma=None):
+#     """
+#     Compute the rbf (gaussian) kernel between X and Y::
+#
+#         K(x, y) = exp(-gamma ||x-y||^2)
+#
+#     for each pair of rows x in X and y in Y.
+#
+#     Read more in the :ref:`User Guide <rbf_kernel>`.
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples_X, n_features)
+#
+#     Y : ndarray of shape (n_samples_Y, n_features), default=None
+#         If `None`, uses `Y=X`.
+#
+#     gamma : float, default=None
+#         If None, defaults to 1.0 / n_features.
+#
+#     Returns
+#     -------
+#     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#     if gamma is None:
+#         gamma = 1.0 / X.shape[1]
+#
+#     K = euclidean_distances(X, Y, squared=True)
+#     K *= -gamma
+#     np.exp(K, K)  # exponentiate K in-place
+#     return K
+#
+#
+# def laplacian_kernel(X, Y=None, gamma=None):
+#     """Compute the laplacian kernel between X and Y.
+#
+#     The laplacian kernel is defined as::
+#
+#         K(x, y) = exp(-gamma ||x-y||_1)
+#
+#     for each pair of rows x in X and y in Y.
+#     Read more in the :ref:`User Guide <laplacian_kernel>`.
+#
+#     .. versionadded:: 0.17
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples_X, n_features)
+#
+#     Y : ndarray of shape (n_samples_Y, n_features), default=None
+#         If `None`, uses `Y=X`.
+#
+#     gamma : float, default=None
+#         If None, defaults to 1.0 / n_features.
+#
+#     Returns
+#     -------
+#     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+#     """
+#     X, Y = check_pairwise_arrays(X, Y)
+#     if gamma is None:
+#         gamma = 1.0 / X.shape[1]
+#
+#     K = -gamma * manhattan_distances(X, Y)
+#     np.exp(K, K)  # exponentiate K in-place
+#     return K
+#
+#
 def cosine_similarity(X, Y=None, dense_output=True):
     """Compute cosine similarity between samples in X and Y.
 
@@ -1261,114 +1261,6 @@ def cosine_similarity(X, Y=None, dense_output=True):
     return K
 
 
-def additive_chi2_kernel(X, Y=None):
-    """Computes the additive chi-squared kernel between observations in X and
-    Y.
-
-    The chi-squared kernel is computed between each pair of rows in X and Y.  X
-    and Y have to be non-negative. This kernel is most commonly applied to
-    histograms.
-
-    The chi-squared kernel is given by::
-
-        k(x, y) = -Sum [(x - y)^2 / (x + y)]
-
-    It can be interpreted as a weighted difference per entry.
-
-    Read more in the :ref:`User Guide <chi2_kernel>`.
-
-    Notes
-    -----
-    As the negative of a distance, this kernel is only conditionally positive
-    definite.
-
-
-    Parameters
-    ----------
-    X : array-like of shape (n_samples_X, n_features)
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-        If `None`, uses `Y=X`.
-
-    Returns
-    -------
-    kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
-
-    See Also
-    --------
-    chi2_kernel : The exponentiated version of the kernel, which is usually
-        preferable.
-    sklearn.kernel_approximation.AdditiveChi2Sampler : A Fourier approximation
-        to this kernel.
-
-    References
-    ----------
-    * Zhang, J. and Marszalek, M. and Lazebnik, S. and Schmid, C.
-      Local features and kernels for classification of texture and object
-      categories: A comprehensive study
-      International Journal of Computer Vision 2007
-      https://research.microsoft.com/en-us/um/people/manik/projects/trade-off/papers/ZhangIJCV06.pdf
-    """
-    if issparse(X) or issparse(Y):
-        raise ValueError("additive_chi2 does not support sparse matrices.")
-    X, Y = check_pairwise_arrays(X, Y)
-    if (X < 0).any():
-        raise ValueError("X contains negative values.")
-    if Y is not X and (Y < 0).any():
-        raise ValueError("Y contains negative values.")
-
-    result = np.zeros((X.shape[0], Y.shape[0]), dtype=X.dtype)
-    _chi2_kernel_fast(X, Y, result)
-    return result
-
-
-def chi2_kernel(X, Y=None, gamma=1.0):
-    """Computes the exponential chi-squared kernel X and Y.
-
-    The chi-squared kernel is computed between each pair of rows in X and Y.  X
-    and Y have to be non-negative. This kernel is most commonly applied to
-    histograms.
-
-    The chi-squared kernel is given by::
-
-        k(x, y) = exp(-gamma Sum [(x - y)^2 / (x + y)])
-
-    It can be interpreted as a weighted difference per entry.
-
-    Read more in the :ref:`User Guide <chi2_kernel>`.
-
-    Parameters
-    ----------
-    X : array-like of shape (n_samples_X, n_features)
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-
-    gamma : float, default=1.
-        Scaling parameter of the chi2 kernel.
-
-    Returns
-    -------
-    kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
-
-    See Also
-    --------
-    additive_chi2_kernel : The additive version of this kernel.
-    sklearn.kernel_approximation.AdditiveChi2Sampler : A Fourier approximation
-        to the additive version of this kernel.
-
-    References
-    ----------
-    * Zhang, J. and Marszalek, M. and Lazebnik, S. and Schmid, C.
-      Local features and kernels for classification of texture and object
-      categories: A comprehensive study
-      International Journal of Computer Vision 2007
-      https://research.microsoft.com/en-us/um/people/manik/projects/trade-off/papers/ZhangIJCV06.pdf
-    """
-    K = additive_chi2_kernel(X, Y)
-    K *= gamma
-    return np.exp(K, K)
-
-
 # Helper functions - distance
 PAIRWISE_DISTANCE_FUNCTIONS = {
     # If updating this dictionary, update the doc in both distance_metrics()
@@ -1384,34 +1276,34 @@ PAIRWISE_DISTANCE_FUNCTIONS = {
     "nan_euclidean": nan_euclidean_distances,
 }
 
-
-def distance_metrics():
-    """Valid metrics for pairwise_distances.
-
-    This function simply returns the valid pairwise distance metrics.
-    It exists to allow for a description of the mapping for
-    each of the valid strings.
-
-    The valid distance metrics, and the function they map to, are:
-
-    =============== ========================================
-    metric          Function
-    =============== ========================================
-    'cityblock'     metrics.pairwise.manhattan_distances
-    'cosine'        metrics.pairwise.cosine_distances
-    'euclidean'     metrics.pairwise.euclidean_distances
-    'haversine'     metrics.pairwise.haversine_distances
-    'l1'            metrics.pairwise.manhattan_distances
-    'l2'            metrics.pairwise.euclidean_distances
-    'manhattan'     metrics.pairwise.manhattan_distances
-    'nan_euclidean' metrics.pairwise.nan_euclidean_distances
-    =============== ========================================
-
-    Read more in the :ref:`User Guide <metrics>`.
-
-    """
-    return PAIRWISE_DISTANCE_FUNCTIONS
-
+#
+# def distance_metrics():
+#     """Valid metrics for pairwise_distances.
+#
+#     This function simply returns the valid pairwise distance metrics.
+#     It exists to allow for a description of the mapping for
+#     each of the valid strings.
+#
+#     The valid distance metrics, and the function they map to, are:
+#
+#     =============== ========================================
+#     metric          Function
+#     =============== ========================================
+#     'cityblock'     metrics.pairwise.manhattan_distances
+#     'cosine'        metrics.pairwise.cosine_distances
+#     'euclidean'     metrics.pairwise.euclidean_distances
+#     'haversine'     metrics.pairwise.haversine_distances
+#     'l1'            metrics.pairwise.manhattan_distances
+#     'l2'            metrics.pairwise.euclidean_distances
+#     'manhattan'     metrics.pairwise.manhattan_distances
+#     'nan_euclidean' metrics.pairwise.nan_euclidean_distances
+#     =============== ========================================
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#
+#     """
+#     return PAIRWISE_DISTANCE_FUNCTIONS
+#
 
 def _dist_wrapper(dist_func, dist_matrix, slice_, *args, **kwargs):
     """Write in-place to a slice of a distance matrix."""
@@ -1902,152 +1794,152 @@ PAIRWISE_BOOLEAN_FUNCTIONS = [
     "yule",
 ]
 
-# Helper functions - distance
-PAIRWISE_KERNEL_FUNCTIONS = {
-    # If updating this dictionary, update the doc in both distance_metrics()
-    # and also in pairwise_distances()!
-    "additive_chi2": additive_chi2_kernel,
-    "chi2": chi2_kernel,
-    "linear": linear_kernel,
-    "polynomial": polynomial_kernel,
-    "poly": polynomial_kernel,
-    "rbf": rbf_kernel,
-    "laplacian": laplacian_kernel,
-    "sigmoid": sigmoid_kernel,
-    "cosine": cosine_similarity,
-}
-
-
-def kernel_metrics():
-    """Valid metrics for pairwise_kernels.
-
-    This function simply returns the valid pairwise distance metrics.
-    It exists, however, to allow for a verbose description of the mapping for
-    each of the valid strings.
-
-    The valid distance metrics, and the function they map to, are:
-      ===============   ========================================
-      metric            Function
-      ===============   ========================================
-      'additive_chi2'   sklearn.pairwise.additive_chi2_kernel
-      'chi2'            sklearn.pairwise.chi2_kernel
-      'linear'          sklearn.pairwise.linear_kernel
-      'poly'            sklearn.pairwise.polynomial_kernel
-      'polynomial'      sklearn.pairwise.polynomial_kernel
-      'rbf'             sklearn.pairwise.rbf_kernel
-      'laplacian'       sklearn.pairwise.laplacian_kernel
-      'sigmoid'         sklearn.pairwise.sigmoid_kernel
-      'cosine'          sklearn.pairwise.cosine_similarity
-      ===============   ========================================
-
-    Read more in the :ref:`User Guide <metrics>`.
-    """
-    return PAIRWISE_KERNEL_FUNCTIONS
-
-
-KERNEL_PARAMS = {
-    "additive_chi2": (),
-    "chi2": frozenset(["gamma"]),
-    "cosine": (),
-    "linear": (),
-    "poly": frozenset(["gamma", "degree", "coef0"]),
-    "polynomial": frozenset(["gamma", "degree", "coef0"]),
-    "rbf": frozenset(["gamma"]),
-    "laplacian": frozenset(["gamma"]),
-    "sigmoid": frozenset(["gamma", "coef0"]),
-}
-
-
-def pairwise_kernels(
-    X, Y=None, metric="linear", *, filter_params=False, n_jobs=None, **kwds
-):
-    """Compute the kernel between arrays X and optional array Y.
-
-    This method takes either a vector array or a kernel matrix, and returns
-    a kernel matrix. If the input is a vector array, the kernels are
-    computed. If the input is a kernel matrix, it is returned instead.
-
-    This method provides a safe way to take a kernel matrix as input, while
-    preserving compatibility with many other algorithms that take a vector
-    array.
-
-    If Y is given (default is None), then the returned matrix is the pairwise
-    kernel between the arrays from both X and Y.
-
-    Valid values for metric are:
-        ['additive_chi2', 'chi2', 'linear', 'poly', 'polynomial', 'rbf',
-        'laplacian', 'sigmoid', 'cosine']
-
-    Read more in the :ref:`User Guide <metrics>`.
-
-    Parameters
-    ----------
-    X : ndarray of shape (n_samples_X, n_samples_X) or \
-            (n_samples_X, n_features)
-        Array of pairwise kernels between samples, or a feature array.
-        The shape of the array should be (n_samples_X, n_samples_X) if
-        metric == "precomputed" and (n_samples_X, n_features) otherwise.
-
-    Y : ndarray of shape (n_samples_Y, n_features), default=None
-        A second feature array only if X has shape (n_samples_X, n_features).
-
-    metric : str or callable, default="linear"
-        The metric to use when calculating kernel between instances in a
-        feature array. If metric is a string, it must be one of the metrics
-        in pairwise.PAIRWISE_KERNEL_FUNCTIONS.
-        If metric is "precomputed", X is assumed to be a kernel matrix.
-        Alternatively, if metric is a callable function, it is called on each
-        pair of instances (rows) and the resulting value recorded. The callable
-        should take two rows from X as input and return the corresponding
-        kernel value as a single number. This means that callables from
-        :mod:`sklearn.metrics.pairwise` are not allowed, as they operate on
-        matrices, not single samples. Use the string identifying the kernel
-        instead.
-
-    filter_params : bool, default=False
-        Whether to filter invalid parameters or not.
-
-    n_jobs : int, default=None
-        The number of jobs to use for the computation. This works by breaking
-        down the pairwise matrix into n_jobs even slices and computing them in
-        parallel.
-
-        ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
-        ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
-        for more details.
-
-    **kwds : optional keyword parameters
-        Any further parameters are passed directly to the kernel function.
-
-    Returns
-    -------
-    K : ndarray of shape (n_samples_X, n_samples_X) or \
-            (n_samples_X, n_samples_Y)
-        A kernel matrix K such that K_{i, j} is the kernel between the
-        ith and jth vectors of the given matrix X, if Y is None.
-        If Y is not None, then K_{i, j} is the kernel between the ith array
-        from X and the jth array from Y.
-
-    Notes
-    -----
-    If metric is 'precomputed', Y is ignored and X is returned.
-
-    """
-    # import GPKernel locally to prevent circular imports
-    from ..gaussian_process.kernels import Kernel as GPKernel
-
-    if metric == "precomputed":
-        X, _ = check_pairwise_arrays(X, Y, precomputed=True)
-        return X
-    elif isinstance(metric, GPKernel):
-        func = metric.__call__
-    elif metric in PAIRWISE_KERNEL_FUNCTIONS:
-        if filter_params:
-            kwds = {k: kwds[k] for k in kwds if k in KERNEL_PARAMS[metric]}
-        func = PAIRWISE_KERNEL_FUNCTIONS[metric]
-    elif callable(metric):
-        func = partial(_pairwise_callable, metric=metric, **kwds)
-    else:
-        raise ValueError("Unknown kernel %r" % metric)
-
-    return _parallel_pairwise(X, Y, func, n_jobs, **kwds)
+# # Helper functions - distance
+# PAIRWISE_KERNEL_FUNCTIONS = {
+#     # If updating this dictionary, update the doc in both distance_metrics()
+#     # and also in pairwise_distances()!
+#     "additive_chi2": additive_chi2_kernel,
+#     "chi2": chi2_kernel,
+#     "linear": linear_kernel,
+#     "polynomial": polynomial_kernel,
+#     "poly": polynomial_kernel,
+#     "rbf": rbf_kernel,
+#     "laplacian": laplacian_kernel,
+#     "sigmoid": sigmoid_kernel,
+#     "cosine": cosine_similarity,
+# }
+#
+#
+# def kernel_metrics():
+#     """Valid metrics for pairwise_kernels.
+#
+#     This function simply returns the valid pairwise distance metrics.
+#     It exists, however, to allow for a verbose description of the mapping for
+#     each of the valid strings.
+#
+#     The valid distance metrics, and the function they map to, are:
+#       ===============   ========================================
+#       metric            Function
+#       ===============   ========================================
+#       'additive_chi2'   sklearn.pairwise.additive_chi2_kernel
+#       'chi2'            sklearn.pairwise.chi2_kernel
+#       'linear'          sklearn.pairwise.linear_kernel
+#       'poly'            sklearn.pairwise.polynomial_kernel
+#       'polynomial'      sklearn.pairwise.polynomial_kernel
+#       'rbf'             sklearn.pairwise.rbf_kernel
+#       'laplacian'       sklearn.pairwise.laplacian_kernel
+#       'sigmoid'         sklearn.pairwise.sigmoid_kernel
+#       'cosine'          sklearn.pairwise.cosine_similarity
+#       ===============   ========================================
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#     """
+#     return PAIRWISE_KERNEL_FUNCTIONS
+#
+#
+# KERNEL_PARAMS = {
+#     "additive_chi2": (),
+#     "chi2": frozenset(["gamma"]),
+#     "cosine": (),
+#     "linear": (),
+#     "poly": frozenset(["gamma", "degree", "coef0"]),
+#     "polynomial": frozenset(["gamma", "degree", "coef0"]),
+#     "rbf": frozenset(["gamma"]),
+#     "laplacian": frozenset(["gamma"]),
+#     "sigmoid": frozenset(["gamma", "coef0"]),
+# }
+#
+#
+# def pairwise_kernels(
+#     X, Y=None, metric="linear", *, filter_params=False, n_jobs=None, **kwds
+# ):
+#     """Compute the kernel between arrays X and optional array Y.
+#
+#     This method takes either a vector array or a kernel matrix, and returns
+#     a kernel matrix. If the input is a vector array, the kernels are
+#     computed. If the input is a kernel matrix, it is returned instead.
+#
+#     This method provides a safe way to take a kernel matrix as input, while
+#     preserving compatibility with many other algorithms that take a vector
+#     array.
+#
+#     If Y is given (default is None), then the returned matrix is the pairwise
+#     kernel between the arrays from both X and Y.
+#
+#     Valid values for metric are:
+#         ['additive_chi2', 'chi2', 'linear', 'poly', 'polynomial', 'rbf',
+#         'laplacian', 'sigmoid', 'cosine']
+#
+#     Read more in the :ref:`User Guide <metrics>`.
+#
+#     Parameters
+#     ----------
+#     X : ndarray of shape (n_samples_X, n_samples_X) or \
+#             (n_samples_X, n_features)
+#         Array of pairwise kernels between samples, or a feature array.
+#         The shape of the array should be (n_samples_X, n_samples_X) if
+#         metric == "precomputed" and (n_samples_X, n_features) otherwise.
+#
+#     Y : ndarray of shape (n_samples_Y, n_features), default=None
+#         A second feature array only if X has shape (n_samples_X, n_features).
+#
+#     metric : str or callable, default="linear"
+#         The metric to use when calculating kernel between instances in a
+#         feature array. If metric is a string, it must be one of the metrics
+#         in pairwise.PAIRWISE_KERNEL_FUNCTIONS.
+#         If metric is "precomputed", X is assumed to be a kernel matrix.
+#         Alternatively, if metric is a callable function, it is called on each
+#         pair of instances (rows) and the resulting value recorded. The callable
+#         should take two rows from X as input and return the corresponding
+#         kernel value as a single number. This means that callables from
+#         :mod:`sklearn.metrics.pairwise` are not allowed, as they operate on
+#         matrices, not single samples. Use the string identifying the kernel
+#         instead.
+#
+#     filter_params : bool, default=False
+#         Whether to filter invalid parameters or not.
+#
+#     n_jobs : int, default=None
+#         The number of jobs to use for the computation. This works by breaking
+#         down the pairwise matrix into n_jobs even slices and computing them in
+#         parallel.
+#
+#         ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
+#         ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
+#         for more details.
+#
+#     **kwds : optional keyword parameters
+#         Any further parameters are passed directly to the kernel function.
+#
+#     Returns
+#     -------
+#     K : ndarray of shape (n_samples_X, n_samples_X) or \
+#             (n_samples_X, n_samples_Y)
+#         A kernel matrix K such that K_{i, j} is the kernel between the
+#         ith and jth vectors of the given matrix X, if Y is None.
+#         If Y is not None, then K_{i, j} is the kernel between the ith array
+#         from X and the jth array from Y.
+#
+#     Notes
+#     -----
+#     If metric is 'precomputed', Y is ignored and X is returned.
+#
+#     """
+#     # import GPKernel locally to prevent circular imports
+#     from ..gaussian_process.kernels import Kernel as GPKernel
+#
+#     if metric == "precomputed":
+#         X, _ = check_pairwise_arrays(X, Y, precomputed=True)
+#         return X
+#     elif isinstance(metric, GPKernel):
+#         func = metric.__call__
+#     elif metric in PAIRWISE_KERNEL_FUNCTIONS:
+#         if filter_params:
+#             kwds = {k: kwds[k] for k in kwds if k in KERNEL_PARAMS[metric]}
+#         func = PAIRWISE_KERNEL_FUNCTIONS[metric]
+#     elif callable(metric):
+#         func = partial(_pairwise_callable, metric=metric, **kwds)
+#     else:
+#         raise ValueError("Unknown kernel %r" % metric)
+#
+#     return _parallel_pairwise(X, Y, func, n_jobs, **kwds)

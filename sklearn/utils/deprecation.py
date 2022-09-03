@@ -2,8 +2,6 @@ import warnings
 import functools
 
 
-__all__ = ["deprecated"]
-
 
 class deprecated:
     """Decorator to mark a function or class as deprecated.
